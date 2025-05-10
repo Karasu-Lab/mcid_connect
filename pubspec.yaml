@@ -2,6 +2,7 @@ name: mcid_connect
 description: "A new Flutter package project."
 version: 0.0.1
 homepage: https://www.karasu256.com
+repository: https://github.com/Karasu-Lab/mcid_connect
 
 environment:
   sdk: ^3.7.2
