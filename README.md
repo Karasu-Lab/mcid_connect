@@ -37,24 +37,36 @@ import 'package:mcid_connect/mcid_connect.dart';
 // Initialize the auth service
 final authService = AuthService(
   clientId: 'your-microsoft-client-id',
-  redirectUri: 'http://localhost:8080',
-  scopes: ['XboxLive.signin', 'XboxLive.offline_access'],
-  onGetDeviceCode: (deviceCode) {
+  redirectUri: 'http://localhost:3000',
+  scopes: ['XboxLive.signin', 'offline_access'],
+  onGetDeviceCode: (deviceCodeResponse) {
     // Show verification URL and user code to the user
-    print('Please visit: ${deviceCode.verificationUri}');
-    print('And enter this code: ${deviceCode.userCode}');
+    print('Please visit: ${deviceCodeResponse.verificationUri}');
+    print('And enter this code: ${deviceCodeResponse.userCode}');
   },
 );
 
 // Start the authentication process
-void login() async {
+Future<void> login() async {
   try {
     // Will trigger the onGetDeviceCode callback with instructions for the user
-    final profile = await authService.authenticate();
+    final success = await authService.startAuthenticationFlow(useDeviceCode: true);
     
-    if (profile != null) {
-      print('Successfully logged in as: ${profile.name}');
-      print('UUID: ${profile.id}');
+    if (success) {
+      // Check if the user has a Minecraft profile
+      final hasProfile = await authService.hasMinecraftProfile();
+      
+      if (hasProfile) {
+        final profile = await authService.getMinecraftProfile();
+        if (profile != null) {
+          print('Successfully logged in as: ${profile.name}');
+          print('UUID: ${profile.id}');
+        }
+      } else {
+        print('Authentication successful but no Minecraft profile found');
+      }
+    } else {
+      print('Authentication failed');
     }
   } catch (e) {
     print('Authentication failed: $e');

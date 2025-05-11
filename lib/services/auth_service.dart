@@ -35,16 +35,18 @@ class AuthService implements AuthServiceInterface {
   late final MinecraftAuthService _minecraftAuthService;
 
   String? _accessToken;
+  String? _microsoftRefreshToken;
   String? _xstsToken;
   String? _xstsUhs;
   String? _minecraftToken;
   MinecraftAccountProfile? _minecraftProfile;
-
   String get accessToken => _accessToken!;
+  String? get microsoftRefreshToken => _microsoftRefreshToken;
   String get xstsToken => _xstsToken!;
   String get xstsUhs => _xstsUhs!;
   String get minecraftToken => _minecraftToken!;
   MinecraftAccountProfile get minecraftProfile => _minecraftProfile!;
+
   @override
   Future<bool> startAuthenticationFlow({
     String? deviceCode,
@@ -60,9 +62,11 @@ class AuthService implements AuthServiceInterface {
           deviceCode = response.deviceCode;
         }
         _accessToken = await _microsoftAuthService.getAccessToken(deviceCode);
+        _microsoftRefreshToken = _microsoftAuthService.getRefreshToken();
       } else {
         _accessToken =
             await _microsoftAuthService.getAccessTokenWithLocalServer();
+        _microsoftRefreshToken = _microsoftAuthService.getRefreshToken();
       }
 
       final xstsResponse = await _xboxAuthService.getXstsToken(_accessToken!);
@@ -70,12 +74,17 @@ class AuthService implements AuthServiceInterface {
       final uhs = xstsResponse['uhs']!;
       _xstsToken = xstsToken;
       _xstsUhs = uhs;
-
       final tokenResponse = await _minecraftAuthService.getMinecraftAccessToken(
         uhs,
         xstsToken,
       );
       _minecraftToken = tokenResponse.accessToken;
+
+      try {
+        _minecraftProfile = await _minecraftAuthService.getAccountprofile();
+      } catch (e) {
+        debugPrint('Failed to get Minecraft profile: $e');
+      }
 
       return true;
     } catch (e) {
@@ -90,10 +99,20 @@ class AuthService implements AuthServiceInterface {
       return true;
     }
 
+    if (_microsoftRefreshToken != null) {
+      try {
+        return await refreshAuthentication();
+      } catch (e) {
+        debugPrint('Re-authentication failed with stored token: $e');
+        return false;
+      }
+    }
+
     final refreshToken = _microsoftAuthService.getRefreshToken();
     if (refreshToken != null) {
+      _microsoftRefreshToken = refreshToken;
       try {
-        return true;
+        return await refreshAuthentication();
       } catch (e) {
         debugPrint('Re-authentication failed: $e');
         return false;
@@ -144,10 +163,50 @@ class AuthService implements AuthServiceInterface {
 
   void clearAuthentication() {
     _accessToken = null;
+    _microsoftRefreshToken = null;
     _xstsToken = null;
+    _xstsUhs = null;
     _minecraftToken = null;
     _minecraftProfile = null;
     _microsoftAuthService.clearCache();
     _minecraftAuthService.clearCache();
+  }
+
+  Future<bool> refreshAuthentication() async {
+    if (_microsoftRefreshToken == null) {
+      return false;
+    }
+
+    try {
+      _accessToken = await _microsoftAuthService.refreshAccessToken(
+        _microsoftRefreshToken!,
+      );
+      if (_accessToken == null) {
+        return false;
+      }
+
+      final xstsResponse = await _xboxAuthService.getXstsToken(_accessToken!);
+      final xstsToken = xstsResponse['token']!;
+      final uhs = xstsResponse['uhs']!;
+      _xstsToken = xstsToken;
+      _xstsUhs = uhs;
+
+      final tokenResponse = await _minecraftAuthService.getMinecraftAccessToken(
+        uhs,
+        xstsToken,
+      );
+      _minecraftToken = tokenResponse.accessToken;
+
+      try {
+        _minecraftProfile = await _minecraftAuthService.getAccountprofile();
+      } catch (e) {
+        debugPrint('Failed to get Minecraft profile during refresh: $e');
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Failed to refresh authentication: $e');
+      return false;
+    }
   }
 }

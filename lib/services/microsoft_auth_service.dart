@@ -260,6 +260,18 @@ class MicrosoftAuthService implements MicrosoftAuthServiceInterface {
     _msRefreshToken = refreshToken;
   }
 
+  @override
+  Future<String?> refreshAccessToken(String refreshToken) async {
+    try {
+      final tokenResponse = await _refreshMicrosoftToken(refreshToken);
+      _msRefreshToken = tokenResponse.refreshToken;
+      return tokenResponse.accessToken;
+    } catch (e) {
+      debugPrint('Failed to refresh access token: $e');
+      return null;
+    }
+  }
+
   void clearCache() {
     _msRefreshToken = null;
     _microsoftAccount = null;
