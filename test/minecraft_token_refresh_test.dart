@@ -77,9 +77,9 @@ void main() {
         );
 
         cachedRefreshToken = authService.microsoftRefreshToken!;
-        originalProfile = authService.minecraftProfile;
-        xstsUhs = authService.xstsUhs;
-        xstsToken = authService.xstsToken;
+        originalProfile = authService.minecraftProfile!;
+        xstsUhs = authService.xstsUhs!;
+        xstsToken = authService.xstsToken!;
 
         debugPrint('\n==================================================');
         debugPrint(
@@ -127,7 +127,7 @@ void main() {
         debugPrint('Authentication Status after Refresh: $isAuth');
         debugPrint('New XSTS UHS: ${authService.xstsUhs}');
         debugPrint(
-          'New XSTS Token (truncated): ${authService.xstsToken.substring(0, 20)}...',
+          'New XSTS Token (truncated): ${authService.xstsToken!.substring(0, 20)}...',
         );
         debugPrint('==================================================\n');
 

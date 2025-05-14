@@ -41,12 +41,12 @@ class AuthService implements AuthServiceInterface {
   String? _xstsUhs;
   String? _minecraftToken;
   MinecraftAccountProfile? _minecraftProfile;
-  String get accessToken => _accessToken!;
+  String? get accessToken => _accessToken;
   String? get microsoftRefreshToken => _microsoftRefreshToken;
-  String get xstsToken => _xstsToken!;
-  String get xstsUhs => _xstsUhs!;
-  String get minecraftToken => _minecraftToken!;
-  MinecraftAccountProfile get minecraftProfile => _minecraftProfile!;
+  String? get xstsToken => _xstsToken;
+  String? get xstsUhs => _xstsUhs;
+  String? get minecraftToken => _minecraftToken;
+  MinecraftAccountProfile? get minecraftProfile => _minecraftProfile;
 
   @override
   Future<bool> startAuthenticationFlow({
