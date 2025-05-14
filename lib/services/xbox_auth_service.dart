@@ -35,7 +35,7 @@ class XboxAuthService implements XboxAuthServiceInterface {
         'Properties': {
           'AuthMethod': 'RPS',
           'SiteName': 'user.auth.xboxlive.com',
-          'RpsTicket': 'd=${accessToken}',
+          'RpsTicket': 'd=$accessToken',
         },
         'RelyingParty': 'http://auth.xboxlive.com',
         'TokenType': 'JWT',
