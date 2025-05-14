@@ -259,7 +259,7 @@ class AuthService implements AuthServiceInterface {
   /// and returns the Microsoft account profile information.
   ///
   /// @param refreshToken The Microsoft refresh token to use for the refresh operation
-  /// @return A Future that resolves to the Microsoft account profile, or null if the refresh operation failed
+  /// @return A Future that resolves to the Microsoft account profile, or null if the refresh operation failed  @override
   @override
   Future<MicrosoftAccount?> refreshAuthenticationWithToken(
     String refreshToken,
@@ -282,6 +282,22 @@ class AuthService implements AuthServiceInterface {
       );
       if (_accessToken == null) {
         return null;
+      }
+
+      // Get XSTS token and UHS with the refreshed access token
+      try {
+        final xstsResponse = await _xboxAuthService.getXstsToken(_accessToken!);
+        final xstsToken = xstsResponse['token']!;
+        final uhs = xstsResponse['uhs']!;
+
+        // Update XSTS token and UHS
+        _xstsToken = xstsToken;
+        _xstsUhs = uhs;
+
+        debugPrint('Successfully updated XSTS token and UHS during refresh');
+      } catch (e) {
+        debugPrint('Failed to get XSTS token during refresh: $e');
+        // Don't return null here, as we still want to return the Microsoft account
       }
 
       return microsoftAccount;
