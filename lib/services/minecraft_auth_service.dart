@@ -153,4 +153,29 @@ class MinecraftAuthService implements MinecraftAuthServiceInterface {
     _minecraftToken = null;
     _tokenExpiration = null;
   }
+  
+  /// Gets the Minecraft profile using a provided access token
+  /// 
+  /// This method allows fetching the Minecraft profile using a specific Minecraft access token
+  /// without storing it in the service instance.
+  /// 
+  /// @param token The Minecraft access token to use for the profile request
+  /// @return A Future that resolves to the Minecraft account profile
+  Future<MinecraftAccountProfile> getProfileWithToken(String token) async {
+    final response = await _httpClient.get(
+      Uri.parse('https://api.minecraftservices.com/minecraft/profile'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      return MinecraftAccountProfile.fromJson(jsonResponse);
+    } else if (response.statusCode == 404) {
+      throw Exception(
+        'No Minecraft profile found. You may need to purchase the game.',
+      );
+    } else {
+      throw Exception('Failed to get Minecraft profile: ${response.body}');
+    }
+  }
 }

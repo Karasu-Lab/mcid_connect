@@ -272,6 +272,30 @@ class MicrosoftAuthService implements MicrosoftAuthServiceInterface {
     }
   }
 
+  /// Refreshes the access token using the provided refresh token and returns the Microsoft account profile.
+  ///
+  /// This method combines token refresh and profile retrieval in a single operation.
+  ///
+  /// @param refreshToken The Microsoft refresh token to use for refresh operation
+  /// @return A Future that resolves to a MicrosoftAccount containing the refreshed token information,
+  ///         or null if the refresh operation failed
+  @override
+  Future<MicrosoftAccount?> refreshAccessTokenWithProfile(
+    String refreshToken,
+  ) async {
+    try {
+      final tokenResponse = await _refreshMicrosoftToken(refreshToken);
+      _msRefreshToken = tokenResponse.refreshToken;
+      _microsoftAccount = MicrosoftAccount(
+        refreshToken: tokenResponse.refreshToken,
+      );
+      return _microsoftAccount;
+    } catch (e) {
+      debugPrint('Failed to refresh access token with profile: $e');
+      return null;
+    }
+  }
+
   void clearCache() {
     _msRefreshToken = null;
     _microsoftAccount = null;

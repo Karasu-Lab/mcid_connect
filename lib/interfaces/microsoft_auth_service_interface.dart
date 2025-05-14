@@ -8,5 +8,6 @@ abstract interface class MicrosoftAuthServiceInterface implements BaseAuthInterf
   Future<String> getAccessTokenWithLocalServer();
   Future<MicrosoftAccount> getMicrosoftAccount();
   Future<String?> refreshAccessToken(String refreshToken);
+  Future<MicrosoftAccount?> refreshAccessTokenWithProfile(String refreshToken);
   void closeLocalServer();
 }

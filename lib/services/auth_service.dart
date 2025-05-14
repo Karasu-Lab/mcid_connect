@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mcid_connect/data/auth/microsoft/device_code_response.dart';
+import 'package:mcid_connect/data/auth/microsoft/microsoft_account.dart';
 import 'package:mcid_connect/data/profile/minecraft_account_profile.dart';
 import 'package:mcid_connect/interfaces/auth_service_interface.dart';
 import 'package:mcid_connect/mcid_connect.dart';
@@ -207,6 +208,86 @@ class AuthService implements AuthServiceInterface {
     } catch (e) {
       debugPrint('Failed to refresh authentication: $e');
       return false;
+    }
+  }
+
+  /// Gets a Minecraft access token directly using XSTS token and UHS
+  ///
+  /// This method allows obtaining a Minecraft access token using the Xbox XSTS token
+  /// and User Hash (UHS) without going through the full Microsoft authentication flow.
+  ///
+  /// @param uhs The User Hash (UHS) from Xbox authentication
+  /// @param xstsToken The XSTS token from Xbox authentication
+  /// @return A Future that resolves to the Minecraft access token, or null if the operation failed
+  Future<String?> getMinecraftTokenWithXstsToken(
+    String uhs,
+    String xstsToken,
+  ) async {
+    try {
+      final tokenResponse = await _minecraftAuthService.getMinecraftAccessToken(
+        uhs,
+        xstsToken,
+      );
+      return tokenResponse.accessToken;
+    } catch (e) {
+      debugPrint('Failed to get Minecraft token with XSTS: $e');
+      return null;
+    }
+  }
+
+  /// Gets the Minecraft profile using the provided Minecraft token
+  ///
+  /// This method fetches the Minecraft profile using the provided Minecraft token.
+  /// The token must be valid and associated with a Minecraft account.
+  ///
+  /// @param minecraftToken The Minecraft access token to use for the profile request
+  /// @return A Future that resolves to the Minecraft account profile, or null if the operation failed
+  Future<MinecraftAccountProfile?> getMinecraftProfileWithToken(
+    String minecraftToken,
+  ) async {
+    try {
+      return await _minecraftAuthService.getProfileWithToken(minecraftToken);
+    } catch (e) {
+      debugPrint('Failed to get Minecraft profile with token: $e');
+      return null;
+    }
+  }
+
+  /// Refreshes authentication using a specific refresh token and returns the Microsoft account profile
+  ///
+  /// This method allows refreshing authentication for any Microsoft account by providing its refresh token,
+  /// and returns the Microsoft account profile information.
+  ///
+  /// @param refreshToken The Microsoft refresh token to use for the refresh operation
+  /// @return A Future that resolves to the Microsoft account profile, or null if the refresh operation failed
+  @override
+  Future<MicrosoftAccount?> refreshAuthenticationWithToken(
+    String refreshToken,
+  ) async {
+    try {
+      // Get Microsoft account profile with refreshed tokens
+      final microsoftAccount = await _microsoftAuthService
+          .refreshAccessTokenWithProfile(refreshToken);
+
+      if (microsoftAccount == null || microsoftAccount.refreshToken.isEmpty) {
+        return null;
+      }
+
+      // Update the cached refresh token
+      _microsoftRefreshToken = microsoftAccount.refreshToken;
+
+      // Get access token
+      _accessToken = await _microsoftAuthService.refreshAccessToken(
+        microsoftAccount.refreshToken,
+      );
+      if (_accessToken == null) {
+        return null;
+      }
+
+      return microsoftAccount;
+    } catch (e) {
+      debugPrint('Failed to refresh authentication with token: $e');
+      return null;
     }
   }
 }
